@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+.eggs/
+dist/
+build/
+*.so
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# Checkpoints & logs
+checkpoints/
+*.pth
+*.ckpt
+*.pt
+logs_*/
+res_*/
+lightning_logs/
+
+# Dataset
+dataset/AnimatedDrawings/preprocessed/
+*.jsonl
+
+# Blender binary (download via setup.sh)
+blender-*/
+*.tar.xz
+get-pip.py
+
+# Analysis / scratch
+metrics_out*/
+scan_stride_out/
+*.csv
+*.tex
+analysis_*/
+pdf/
+
+# OS
+.DS_Store
+__MACOSX/
+Thumbs.db
