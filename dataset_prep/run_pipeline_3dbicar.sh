@@ -68,7 +68,7 @@ CONFIG_BLEND="${DSU_DIR}/3_style_translator/configs/blender/config_ortho.blend"
 BICAR_UIDS="${DL_EXTRACTED}/bicar_uids.json"
 UID_LIST="${BICAR_PREPROCESSED}/base_uids_00.json"
 BASE_UID_LIST="${BICAR_PREPROCESSED}/base_uids.json"
-RENDER_SCRIPT="${SCRIPT_DIR}/blender_render_obj.py"
+RENDER_SCRIPT="${SCRIPT_DIR}/stage3_obj_render/blender_render_obj.py"
 
 SKIP_GT=0; SKIP_MV=0; SKIP_RECON=0; SKIP_RENDER=0; RESUME=""
 for arg in "$@"; do
@@ -98,7 +98,7 @@ if [ "$SKIP_GT" -eq 0 ]; then
     if [ ! -f "$BICAR_UIDS" ]; then
         echo ""
         echo "[0a/3] Scanning raw download for character IDs ..."
-        python "${SCRIPT_DIR}/prep_3dbicar_uids.py" \
+        python "${SCRIPT_DIR}/stage0_gt_render/prep_3dbicar_uids.py" \
             --dl_extracted "$DL_EXTRACTED" \
             --out_dir "$DL_EXTRACTED"
         echo "[0a/3] Done."
@@ -109,7 +109,7 @@ if [ "$SKIP_GT" -eq 0 ]; then
     # 0b. Render 10 GT views per character (Blender Cycles)
     echo ""
     echo "[0b/3] Rendering GT multi-view images (Blender Cycles) ..."
-    python "${SCRIPT_DIR}/bicar_multiview_render.py" \
+    python "${SCRIPT_DIR}/stage0_gt_render/bicar_multiview_render.py" \
         --input_models_path "$BICAR_UIDS" \
         --bicar_root        "$DL_EXTRACTED" \
         --save_folder       "$BICAR_RENDER" \
@@ -121,7 +121,7 @@ if [ "$SKIP_GT" -eq 0 ]; then
     # 0c. Pack rendered PNGs → preprocessed/{id}_{view}/char/
     echo ""
     echo "[0c/3] Packing GT renders to preprocessed format ..."
-    python "${SCRIPT_DIR}/pack_multiview_to_animateddrawings.py" \
+    python "${SCRIPT_DIR}/stage0_gt_render/pack_multiview_to_animateddrawings.py" \
         --render_root             "$BICAR_RENDER" \
         --out_preprocessed_root   "$BICAR_PREPROCESSED" \
         --uids_json_out           "$BICAR_PREPROCESSED/uids.json" \
@@ -132,7 +132,7 @@ if [ "$SKIP_GT" -eq 0 ]; then
     # Generate base_uids.json + base_uids_00.json from preprocessed/
     echo ""
     echo "[0d/3] Generating pipeline UID lists ..."
-    python "${SCRIPT_DIR}/prep_3dbicar_uids.py" \
+    python "${SCRIPT_DIR}/stage0_gt_render/prep_3dbicar_uids.py" \
         --preprocessed "$BICAR_PREPROCESSED"
     echo "[0d/3] Done."
 
@@ -141,7 +141,7 @@ else
     # Still ensure UID lists exist for later stages
     if [ ! -f "$UID_LIST" ]; then
         echo "  Generating UID lists from existing preprocessed/ ..."
-        python "${SCRIPT_DIR}/prep_3dbicar_uids.py" \
+        python "${SCRIPT_DIR}/stage0_gt_render/prep_3dbicar_uids.py" \
             --preprocessed "$BICAR_PREPROCESSED"
     fi
 fi
@@ -150,7 +150,7 @@ fi
 if [ "$SKIP_MV" -eq 0 ]; then
     echo ""
     echo "[1/3] Wonder3D mv.py (GPUs: $GPUS) ..."
-    python "${SCRIPT_DIR}/run_mv_parallel.py" \
+    python "${SCRIPT_DIR}/stage1_mv/run_mv_parallel.py" \
         --dsu_dir  "$DSU_DIR" \
         --data_dir "$BICAR_PREPROCESSED" \
         --gpus $GPUS $RESUME
@@ -163,7 +163,7 @@ fi
 if [ "$SKIP_RECON" -eq 0 ]; then
     echo ""
     echo "[2/3] instant-nsr recon.py (GPUs: $GPUS) ..."
-    python "${SCRIPT_DIR}/run_recon_parallel.py" \
+    python "${SCRIPT_DIR}/stage2_recon/run_recon_parallel.py" \
         --dsu_dir  "$DSU_DIR" \
         --data_dir "$BICAR_PREPROCESSED" \
         --gpus $GPUS $RESUME
@@ -176,7 +176,7 @@ fi
 if [ "$SKIP_RENDER" -eq 0 ]; then
     echo ""
     echo "[3/3] 10-view OBJ render → $SPECSIA_OUTPUT ..."
-    python "${SCRIPT_DIR}/run_render_obj_parallel.py" \
+    python "${SCRIPT_DIR}/stage3_obj_render/run_render_obj_parallel.py" \
         --data_dir     "$BICAR_PREPROCESSED" \
         --output_root  "$SPECSIA_OUTPUT" \
         --uid_list     "$BASE_UID_LIST" \
@@ -189,5 +189,12 @@ else
     echo "[3/3] SKIPPED (--skip-render)"
 fi
 
+# ── Stage 4: Create train/val/test splits ─────────────────────────────────
+echo ""
+echo "[4/4] Creating train/val/test splits ..."
+python "${SCRIPT_DIR}/stage4_splits/create_splits.py" --specsia_root "$SPECSIA_OUTPUT"
+echo "[4/4] Done."
+
 echo ""
 echo "Pipeline complete. Dataset at: $SPECSIA_OUTPUT"
+echo "Splits written to: $SPECSIA_OUTPUT/splits/"

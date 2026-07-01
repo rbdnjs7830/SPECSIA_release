@@ -32,6 +32,29 @@ import argparse
 import subprocess
 import time
 
+
+def _repo_root() -> str:
+    return os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+def _find_blender() -> str:
+    """Return path to blender: $BLENDER env → repo-bundled → PATH."""
+    from_env = os.environ.get("BLENDER")
+    if from_env and os.path.isfile(from_env) and os.access(from_env, os.X_OK):
+        return from_env
+    bundled = os.path.join(_repo_root(), "blender-3.6.14-linux-x64", "blender")
+    if os.path.isfile(bundled) and os.access(bundled, os.X_OK):
+        return bundled
+    import shutil
+    which = shutil.which("blender")
+    if which:
+        return which
+    raise RuntimeError(
+        "Blender not found. Run `source dataset_prep/setup.sh` to download it, "
+        "or set the $BLENDER environment variable."
+    )
+
+
 # ------------------------------------------------------------
 # Detect Blender environment
 # ------------------------------------------------------------
@@ -59,7 +82,8 @@ def launcher_main():
     parser.add_argument('--bicar_root', type=str, default='../../dataset/3DBiCar/raw')
     parser.add_argument('--save_folder', type=str, default='../../dataset/3DBiCar/multiview_outline')
 
-    parser.add_argument('--blender_install_path', type=str, default='../../blender-3.3.1-linux-x64/blender')
+    parser.add_argument('--blender_install_path', type=str, default=None,
+                        help="Path to blender executable (default: auto-detect via $BLENDER or repo bundle)")
 
     parser.add_argument('--ortho_scale', type=float, default=1.35)
     parser.add_argument('--resolution', type=int, default=512)
@@ -87,7 +111,7 @@ def launcher_main():
     end_i = len(model_paths) if args.end_i > len(model_paths) else args.end_i
 
     script_path = os.path.abspath(__file__)
-    blender_path = os.path.abspath(args.blender_install_path)
+    blender_path = os.path.abspath(args.blender_install_path or _find_blender())
     save_root = os.path.abspath(args.save_folder)
     bicar_root = os.path.abspath(args.bicar_root)
     os.makedirs(save_root, exist_ok=True)

@@ -69,61 +69,52 @@ Splits are character-disjoint (seed=42).
 
 ## Build SPECSIA-15K from Scratch
 
-If you prefer to build the dataset locally from [3DBiCar](https://gaplab.cuhk.edu.cn/projects/RaBit/dataset.html):
+You can reproduce the full dataset from the raw [3DBiCar](https://gaplab.cuhk.edu.cn/projects/RaBit/dataset.html) release.
 
-**1. Download 3DBiCar**
+### 0. Setup
 
-Download from [https://gaplab.cuhk.edu.cn/projects/RaBit/dataset.html](https://gaplab.cuhk.edu.cn/projects/RaBit/dataset.html)
-and organize each character as:
-
-```
-{data_dir}/{uid}/
-└── char/
-    ├── texture.png      ← front-view character drawing
-    └── mask.png         ← foreground mask
-```
-
-**2. Multi-view generation (Wonder3D)**
+Clone this repo and run the one-time setup (downloads Blender 3.6.14, clones DrawingSpinUp, installs Python deps):
 
 ```bash
-python dataset_prep/run_mv_parallel.py \
-  --dsu_dir  /path/to/DrawingSpinUp \
-  --data_dir /path/to/3dbicar/preprocessed \
-  --gpus 0 1 2 3 --resume
-# Output → {data_dir}/{uid}/mv/
+git clone https://github.com/rbdnjs7830/SPECSIA_release
+cd SPECSIA_release
+bash setup.sh
 ```
 
-**3. 3D reconstruction (instant-nsr)**
+### 1. Download 3DBiCar
+
+Download from [https://gaplab.cuhk.edu.cn/projects/RaBit/dataset.html](https://gaplab.cuhk.edu.cn/projects/RaBit/dataset.html) and extract so each character follows:
+
+```
+{dl_extracted}/{uid}/
+├── tpose/
+│   ├── m.obj          ← body mesh (required)
+│   ├── m.bmp          ← body texture
+│   ├── e.obj          ← accessory mesh (required)
+│   └── e.bmp          ← accessory texture
+├── image/
+│   ├── image_reshape512.jpeg  ← front-view 2D drawing
+│   └── mask512.png
+└── metadata.json
+```
+
+### 2. Configure paths and run the pipeline
+
+Edit `dataset_prep/paths.sh` to set your data directories, then run:
 
 ```bash
-python dataset_prep/run_recon_parallel.py \
-  --dsu_dir  /path/to/DrawingSpinUp \
-  --data_dir /path/to/3dbicar/preprocessed \
-  --gpus 0 1 2 3 --resume
-# Output → {data_dir}/{uid}/mesh/*.obj
+source dataset_prep/paths.sh
+bash dataset_prep/run_pipeline_3dbicar.sh --resume
 ```
 
-**4. Multi-view Blender rendering**
+The pipeline runs all stages automatically:
+- **Stage 0** — Blender Cycles renders 10 yaw views of each T-pose OBJ (GT targets)
+- **Stage 1** — Wonder3D generates 6-view priors from the front-view drawing
+- **Stage 2** — instant-nsr reconstructs a 3D mesh from the 6 views
+- **Stage 3** — Blender Eevee renders the reconstructed mesh (color, pos, edge) from 10 angles
+- **Stage 4** — Creates character-disjoint train/val/test splits
 
-```bash
-python dataset_prep/run_render_obj_parallel.py \
-  --data_dir    /path/to/3dbicar/preprocessed \
-  --output_root /path/to/SPECSIA-15k \
-  --uid_list    /path/to/3dbicar/preprocessed/base_uids.json \
-  --blender     ./blender-3.6.14-linux-x64/blender \
-  --script      dataset_prep/blender_render_obj.py \
-  --num_workers 4 --align
-# Output → {output_root}/{uid}/
-```
-
-**5. Create splits and upload**
-
-```bash
-python dataset_prep/create_splits.py --specsia_root /path/to/SPECSIA-15k
-python dataset_prep/upload_hf.py \
-  --specsia_root /path/to/SPECSIA-15k \
-  --repo_id      YOUR_HF_USERNAME/SPECSIA-15K
-```
+Individual stages can be skipped with `--skip-gt-render`, `--skip-mv`, `--skip-recon`, `--skip-render`.
 
 ---
 

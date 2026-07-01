@@ -27,8 +27,7 @@ def main():
     parser.add_argument("--dsu_dir",  required=True,
                         help="DrawingSpinUp root directory")
     parser.add_argument("--config",   default=None,
-                        help="mv config yaml (default: <dsu_dir>/2_charactor_reconstructor/"
-                             "configs/mvdiffusion-joint-ortho-6views-3dbicar.yaml)")
+                        help="mv config yaml (default: dataset_prep/configs/mvdiffusion-3dbicar.yaml)")
     parser.add_argument("--img_fn",   default="char/ffc_resnet_inpainted.png",
                         help="Input image filename relative to each UID dir "
                              "(falls back to char/texture.png inside mv.py)")
@@ -36,8 +35,9 @@ def main():
     cli = parser.parse_args()
 
     mv_dir = os.path.join(cli.dsu_dir, "2_charactor_reconstructor")
+    _script_dir = os.path.dirname(os.path.abspath(__file__))
     config_path = cli.config or os.path.join(
-        mv_dir, "configs", "mvdiffusion-joint-ortho-6views-3dbicar.yaml"
+        _script_dir, "..", "configs", "mvdiffusion-3dbicar.yaml"
     )
 
     sys.path.insert(0, mv_dir)

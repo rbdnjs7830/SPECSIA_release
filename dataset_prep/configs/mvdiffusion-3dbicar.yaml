@@ -1,0 +1,20 @@
+# Wonder3D config for SPECSIA-15K (3DBiCar)
+# data_root and uid_list_file are overridden at runtime
+# by run_mv_parallel.py — do not hard-code paths here.
+
+seed: 123456
+pretrained_model_name_or_path: 'flamehaze1115/wonder3d-v1.0'
+data_root: PLACEHOLDER
+uid_list_file: PLACEHOLDER
+views: ['front', 'front_right', 'right', 'back', 'left', 'front_left']
+resolution: [1024, 1024]
+
+validation_dataset:
+  num_views: 6
+  bg_color: 'white'
+  img_wh: [256, 256]
+  crop_size: -1
+pipe_validation_kwargs:
+  eta: 1.0
+  guidance_scale: 1.0
+  num_inference_steps: 75

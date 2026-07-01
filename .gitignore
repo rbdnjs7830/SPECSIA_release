@@ -31,6 +31,9 @@ blender-*/
 *.tar.xz
 get-pip.py
 
+# External dependencies (cloned by setup.sh, not tracked)
+external/
+
 # Analysis / scratch
 metrics_out*/
 scan_stride_out/

@@ -55,6 +55,42 @@ import cv2
 from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+
+def _repo_root() -> str:
+    return os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+def _find_blender() -> str:
+    from_env = os.environ.get("BLENDER")
+    if from_env and os.path.isfile(from_env) and os.access(from_env, os.X_OK):
+        return from_env
+    bundled = os.path.join(_repo_root(), "blender-3.6.14-linux-x64", "blender")
+    if os.path.isfile(bundled) and os.access(bundled, os.X_OK):
+        return bundled
+    which = shutil.which("blender")
+    if which:
+        return which
+    raise RuntimeError(
+        "Blender not found. Run `source dataset_prep/setup.sh` to download it, "
+        "or set the $BLENDER environment variable."
+    )
+
+
+def _find_config_blend() -> str:
+    from_env = os.environ.get("CONFIG_BLEND")
+    if from_env and os.path.isfile(from_env):
+        return from_env
+    default = os.path.join(
+        _repo_root(), "external", "DrawingSpinUp",
+        "3_style_translator", "configs", "blender", "config_ortho.blend"
+    )
+    if os.path.isfile(default):
+        return default
+    raise RuntimeError(
+        "config_ortho.blend not found. Run `source dataset_prep/setup.sh` first, "
+        "or set $CONFIG_BLEND."
+    )
 from align_rest_pose import (
     estimate_transform,
     transform_image,
@@ -472,12 +508,12 @@ def main():
                         help="SPECSIA-15k/ output root")
     parser.add_argument("--uid_list",     required=True,
                         help="JSON list of BASE char ids (e.g. ['5','6',...])")
-    parser.add_argument("--blender",      required=True,
-                        help="path to blender executable")
-    parser.add_argument("--config_blend", required=True,
-                        help="path to config_ortho.blend")
-    parser.add_argument("--script",       required=True,
-                        help="path to blender_render_obj.py")
+    parser.add_argument("--blender",      default=None,
+                        help="path to blender executable (default: auto-detect via $BLENDER or repo bundle)")
+    parser.add_argument("--config_blend", default=None,
+                        help="path to config_ortho.blend (default: external/DrawingSpinUp/...)")
+    parser.add_argument("--script",       default=None,
+                        help="path to blender_render_obj.py (default: dataset_prep/blender_render_obj.py)")
     parser.add_argument("--engine",       default="BLENDER_EEVEE",
                         choices=["BLENDER_EEVEE", "CYCLES"])
     parser.add_argument("--num_views",    type=int,   default=10)
@@ -499,6 +535,12 @@ def main():
     parser.add_argument("--resume",       action="store_true",
                         help="Skip characters whose color renders already exist")
     args = parser.parse_args()
+
+    blender     = args.blender     or _find_blender()
+    config_blend = args.config_blend or _find_config_blend()
+    script      = args.script      or os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "blender_render_obj.py"
+    )
 
     with open(args.uid_list) as f:
         base_uids = json.load(f)
@@ -525,9 +567,9 @@ def main():
     args_dict = {
         "data_dir":     args.data_dir,
         "output_root":  args.output_root,
-        "blender":      args.blender,
-        "config_blend": args.config_blend,
-        "script":       args.script,
+        "blender":      blender,
+        "config_blend": config_blend,
+        "script":       script,
         "engine":       args.engine,
         "num_views":    args.num_views,
         "yaw_start":    args.yaw_start,

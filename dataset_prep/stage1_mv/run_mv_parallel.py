@@ -27,6 +27,32 @@ import subprocess
 import shutil
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+
+def _default_dsu_dir() -> str:
+    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    return (
+        os.environ.get("DSU_DIR")
+        or os.path.join(repo_root, "external", "DrawingSpinUp")
+    )
+
+
+def _make_mv_config(template_path: str, data_dir: str, uid_list_path: str) -> str:
+    """Inject data_root and uid_list_file into the mv config template.
+    Uses string replacement to avoid corrupting YAML structure.
+    Returns path to temp file (caller must delete it).
+    """
+    with open(template_path) as f:
+        raw = f.read()
+    raw = raw.replace("data_root: PLACEHOLDER", f"data_root: '{data_dir}'")
+    raw = raw.replace("uid_list_file: PLACEHOLDER", f"uid_list_file: '{uid_list_path}'")
+    tmp = tempfile.NamedTemporaryFile(
+        mode="w", suffix=".yaml", delete=False, prefix="mv_3dbicar_"
+    )
+    tmp.write(raw)
+    tmp.close()
+    return tmp.name
+
+
 WORKER = os.path.join(os.path.dirname(__file__), "mv_worker.py")
 
 
@@ -55,26 +81,41 @@ def run_worker(gpu: int, uid_list_path: str, dsu_dir: str, config: str, resume: 
 
 def main():
     parser = argparse.ArgumentParser("Parallel Wonder3D for 3DBiCar")
-    parser.add_argument("--dsu_dir",  default=os.environ.get("DSU_DIR"),
-                        help="DrawingSpinUp root (or set $DSU_DIR)")
+    parser.add_argument("--dsu_dir",  default=_default_dsu_dir(),
+                        help="DrawingSpinUp root (default: external/DrawingSpinUp or $DSU_DIR)")
     parser.add_argument("--data_dir", default=os.environ.get("BICAR_PREPROCESSED"),
                         help="3DBiCar preprocessed root (or set $BICAR_PREPROCESSED)")
     parser.add_argument("--uid_list", default=None,
                         help="JSON file listing _00 UIDs "
                              "(default: <data_dir>/base_uids_00.json)")
     parser.add_argument("--config",   default=None,
-                        help="Override mv config yaml")
+                        help="mv config YAML template (default: dataset_prep/configs/mvdiffusion-3dbicar.yaml). "
+                             "data_root and uid_list_file are injected at runtime.")
     parser.add_argument("--gpus",     nargs="+", type=int, default=[0, 1, 2, 3])
     parser.add_argument("--resume",   action="store_true",
                         help="Skip UIDs whose mv/ output already exists")
     args = parser.parse_args()
 
-    if not args.dsu_dir:
-        parser.error("--dsu_dir is required (or set $DSU_DIR)")
+    if not args.dsu_dir or not os.path.isdir(args.dsu_dir):
+        parser.error(
+            f"DrawingSpinUp not found at '{args.dsu_dir}'. "
+            "Run `bash setup.sh` to initialize the submodule, "
+            "or set --dsu_dir / $DSU_DIR."
+        )
     if not args.data_dir:
         parser.error("--data_dir is required (or set $BICAR_PREPROCESSED)")
 
     uid_list_path = args.uid_list or os.path.join(args.data_dir, "base_uids_00.json")
+
+    # Resolve and inject paths into the mv config template
+    template = args.config or os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "..", "configs", "mvdiffusion-3dbicar.yaml"
+    )
+    if not os.path.exists(template):
+        parser.error(f"mv config template not found: {template}")
+    tmp_config = _make_mv_config(template, args.data_dir, uid_list_path)
+
     with open(uid_list_path) as f:
         all_uids = json.load(f)
 
@@ -86,6 +127,7 @@ def main():
 
     if not pending:
         print("All UIDs already processed.")
+        os.unlink(tmp_config)
         return
 
     gpus = args.gpus
@@ -103,16 +145,19 @@ def main():
 
     print(f"\nLaunching {n} workers across GPUs {gpus} ...")
 
-    with ThreadPoolExecutor(max_workers=n) as exe:
-        futs = {
-            exe.submit(run_worker, gpu, path, args.dsu_dir, args.config, args.resume): gpu
-            for gpu, path in zip(gpus, split_paths)
-        }
-        for fut in as_completed(futs):
-            gpu = futs[fut]
-            print(f"[GPU {gpu}] worker finished (exit={fut.result()})", flush=True)
+    try:
+        with ThreadPoolExecutor(max_workers=n) as exe:
+            futs = {
+                exe.submit(run_worker, gpu, path, args.dsu_dir, tmp_config, args.resume): gpu
+                for gpu, path in zip(gpus, split_paths)
+            }
+            for fut in as_completed(futs):
+                gpu = futs[fut]
+                print(f"[GPU {gpu}] worker finished (exit={fut.result()})", flush=True)
+    finally:
+        os.unlink(tmp_config)
+        shutil.rmtree(tmpdir, ignore_errors=True)
 
-    shutil.rmtree(tmpdir, ignore_errors=True)
     print("Done.")
 
 
