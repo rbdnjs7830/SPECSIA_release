@@ -62,10 +62,10 @@ pre-trained to correct these artifacts in a view-generalizable way.
 
 | Split      | Characters | Samples |
 |------------|-----------|---------|
-| train      | 1,298     | ~12,980 |
-| validation | 100       | ~1,000  |
-| test       | 100       | ~1,000  |
-| **total**  | **1,498** | **~14,980** |
+| train      | 1,298     | 12,980 |
+| validation | 100       | 1,000  |
+| test       | 100       | 1,000  |
+| **total**  | **1,498** | **14,980** |
 
 - Resolution: **512 × 512** pixels
 - Format: **RGB PNG** (color, pos, edge, gt), **grayscale PNG** (mask)
@@ -100,12 +100,7 @@ sample["gt"].show()     # artifact-free GT render (Y*)
 
 ### Pre-training DraViE on SPECSIA-15K
 
-```bash
-git clone https://github.com/rbdnjs7830/SPECSIA_release
-cd SPECSIA_release
-# Edit configs/pretrain_3dbicar.yaml: set root_dir to your dataset path
-python train_pretrain.py --config configs/pretrain_3dbicar.yaml
-```
+> **Coming soon.** DraViE training code and pretrained checkpoints will be released at [rbdnjs7830/SPECSIA_release](https://github.com/rbdnjs7830/SPECSIA_release).
 
 ---
 
