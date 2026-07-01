@@ -78,7 +78,8 @@ Clone this repo and run the one-time setup (downloads Blender 3.6.14, clones Dra
 ```bash
 git clone https://github.com/rbdnjs7830/SPECSIA_release
 cd SPECSIA_release
-bash setup.sh
+bash setup.sh        # creates conda env 'specsia', installs deps
+conda activate specsia
 ```
 
 ### 1. Download 3DBiCar

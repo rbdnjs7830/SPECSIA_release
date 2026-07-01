@@ -3,12 +3,28 @@
 # Run from the repository root: bash setup.sh
 set -e
 
+ENV_NAME="specsia"
+PYTHON_VERSION="3.10"
+
 BLENDER_VERSION="3.6.14"
 BLENDER_TARBALL="blender-${BLENDER_VERSION}-linux-x64.tar.xz"
 BLENDER_URL="https://download.blender.org/release/Blender3.6/${BLENDER_TARBALL}"
 BLENDER_DIR="blender-${BLENDER_VERSION}-linux-x64"
 BLENDER_BIN="./${BLENDER_DIR}/blender"
 BLENDER_PY="./${BLENDER_DIR}/3.6/python/bin/python3.10"
+
+# ── 0. Conda environment ──────────────────────────────────────────────────────
+if ! command -v conda &>/dev/null; then
+  echo "ERROR: conda not found. Install Miniconda or Anaconda first."
+  exit 1
+fi
+
+if conda env list | grep -qE "^${ENV_NAME}\s"; then
+  echo "Conda env '${ENV_NAME}' already exists, skipping creation."
+else
+  echo "Creating conda env '${ENV_NAME}' (Python ${PYTHON_VERSION})…"
+  conda create -n "${ENV_NAME}" python="${PYTHON_VERSION}" -y
+fi
 
 # ── 1. Blender ────────────────────────────────────────────────────────────────
 if [ ! -d "${BLENDER_DIR}" ]; then
@@ -45,13 +61,12 @@ fi
 
 # ── 3. DrawingSpinUp Python dependencies ──────────────────────────────────────
 # Wonder3D and instant-nsr require heavy ML packages (diffusers, xformers, etc.)
-# Install them into the current Python environment.
-echo "Installing DrawingSpinUp dependencies…"
-pip install -r external/DrawingSpinUp/requirements.txt
+echo "Installing DrawingSpinUp dependencies into '${ENV_NAME}'…"
+conda run -n "${ENV_NAME}" pip install -r external/DrawingSpinUp/requirements.txt
 
 # ── 4. SPECSIA / DraViE Python dependencies ───────────────────────────────────
-echo "Installing SPECSIA dependencies…"
-pip install -r requirements.txt
+echo "Installing SPECSIA dependencies into '${ENV_NAME}'…"
+conda run -n "${ENV_NAME}" pip install -r requirements.txt
 
 # ── 5. Pretrained models ──────────────────────────────────────────────────────
 # [Required] DIS background-removal model (used by Wonder3D)
@@ -76,10 +91,12 @@ fi
 
 echo ""
 echo "Setup complete."
-echo "  Blender : ${BLENDER_BIN}"
-echo "  DSU     : external/DrawingSpinUp"
+echo "  Conda env : ${ENV_NAME}  (Python ${PYTHON_VERSION})"
+echo "  Blender   : ${BLENDER_BIN}"
+echo "  DSU       : external/DrawingSpinUp"
 echo ""
 echo "Next steps:"
-echo "  1. Edit dataset_prep/paths.sh (set DL_EXTRACTED, BICAR_RENDER, etc.)"
-echo "  2. source dataset_prep/paths.sh"
-echo "  3. bash dataset_prep/run_pipeline_3dbicar.sh --resume"
+echo "  1. conda activate ${ENV_NAME}"
+echo "  2. Edit dataset_prep/paths.sh (set DL_EXTRACTED, BICAR_RENDER, etc.)"
+echo "  3. source dataset_prep/paths.sh"
+echo "  4. bash dataset_prep/run_pipeline_3dbicar.sh --resume"
