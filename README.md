@@ -1,11 +1,14 @@
 # SPECSIA: Stylization Dataset for Novel-View Enhancement in Drawing-based 3D Animation
 
-[Paper](#) | [Project Page](https://rbdnjs7830.github.io/SPECSIA/) | [Dataset (HuggingFace)](https://huggingface.co/datasets/Kyu0528/SPECSIA-15K)
+[Kyuwon Kim](https://rbdnjs7830.github.io/)<sup>1</sup> · [Sunjae Yoon](https://dbstjswo505.github.io/)<sup>2</sup> · [Chang D. Yoo](https://sanctusfactory.com/family.php)<sup>1</sup>
 
-> **Kyuwon Kim, Sunjae Yoon, Chang D. Yoo**  
-> KAIST School of Electrical Engineering
->
-> *European Conference on Computer Vision (ECCV) 2026*
+<sup>1</sup>School of Electrical Engineering, KAIST · <sup>2</sup>Department of AI, Chung-Ang University
+
+*European Conference on Computer Vision (ECCV) 2026*
+
+<a href='#'><img src='https://img.shields.io/badge/arXiv-Paper-b31b1b?logo=arxiv&logoColor=white'></a>
+<a href='https://rbdnjs7830.github.io/SPECSIA/'><img src='https://img.shields.io/badge/Project-Page-green?logo=googlechrome&logoColor=white'></a>
+<a href='https://huggingface.co/datasets/Kyu0528/SPECSIA-15K'><img src='https://img.shields.io/badge/HuggingFace-Dataset-yellow?logo=huggingface&logoColor=white'></a>
 
 ---
 
