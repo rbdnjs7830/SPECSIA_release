@@ -6,7 +6,7 @@
 
 *European Conference on Computer Vision (ECCV) 2026*
 
-<a href='#'><img src='https://img.shields.io/badge/arXiv-Paper-b31b1b?logo=arxiv&logoColor=white'></a>
+<a href='https://arxiv.org/abs/2607.00525'><img src='https://img.shields.io/badge/arXiv-2607.00525-b31b1b?logo=arxiv&logoColor=white'></a>
 <a href='https://rbdnjs7830.github.io/SPECSIA/'><img src='https://img.shields.io/badge/Project-Page-green?logo=googlechrome&logoColor=white'></a>
 <a href='https://huggingface.co/datasets/Kyu0528/SPECSIA-15K'><img src='https://img.shields.io/badge/HuggingFace-Dataset-yellow?logo=huggingface&logoColor=white'></a>
 

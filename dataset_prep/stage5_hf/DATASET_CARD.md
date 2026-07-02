@@ -21,7 +21,7 @@ size_categories:
 Kyuwon Kim, Sunjae Yoon, Chang D. Yoo (KAIST / Chung-Ang University)  
 *European Conference on Computer Vision (ECCV) 2026*
 
-[[Project Page]](https://rbdnjs7830.github.io/SPECSIA/) · [[Paper]](#) · [[Code]](https://github.com/rbdnjs7830/SPECSIA_release)
+[[Project Page]](https://rbdnjs7830.github.io/SPECSIA/) · [[Paper]](https://arxiv.org/abs/2607.00525) · [[Code]](https://github.com/rbdnjs7830/SPECSIA_release)
 
 ---
 
