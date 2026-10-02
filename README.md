@@ -131,5 +131,17 @@ Individual stages can be skipped with `--skip-gt-render`, `--skip-mv`, `--skip-r
 ## Citation
 
 ```bibtex
-TBA
+@inproceedings{kim2026specsia,
+  title     = {{SPECSIA}: Stylization Dataset for Novel-View Enhancement in Drawing-Based {3D} Animation},
+  author    = {Kim, Kyuwon and Yoon, Sunjae and Yoo, Chang D.},
+  editor    = {Favaro, Paolo and Kukelova, Zuzana and Maki, Atsuto and Rohrbach, Anna and Schindler, Konrad and Tombari, Federico},
+  booktitle = {Computer Vision -- ECCV 2026},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {17030},
+  pages     = {575--592},
+  publisher = {Springer},
+  address   = {Cham},
+  year      = {2026},
+  doi       = {10.1007/978-3-032-37531-5_32}
+}
 ```
